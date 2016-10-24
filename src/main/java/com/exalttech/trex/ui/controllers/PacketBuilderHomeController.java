@@ -46,10 +46,16 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+
+import com.google.inject.Inject;
+import com.xored.javafx.packeteditor.controllers.FieldEditorController;
+import java.util.Base64;
+
 
 /**
  * Packet builder FXML controller
@@ -105,6 +111,12 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
     @FXML
     TabPane streamTabPane;
 
+    @FXML
+    StackPane fieldEditorTopPane;
+    
+    @Inject
+    FieldEditorController packetBuilderController;
+    
     PacketInfo packetInfo = null;
     private PacketParser parser;
     private PacketHex packetHex;
@@ -165,6 +177,7 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
      * @param pcapFileBinary
      */
     private void initEditStream(String pcapFileBinary) {
+        packetBuilderController.newPacket();
         if (!Util.isNullOrEmpty(selectedProfile.getStream().getPacket().getMeta())) {
             BuilderDataBinding dataBinding = (BuilderDataBinding) Util.deserializeStringToObject(selectedProfile.getStream().getPacket().getMeta());
             if (dataBinding != null) {
@@ -178,7 +191,8 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
                 packetInfo = new PacketInfo();
                 File pcapFile = trafficProfile.decodePcapBinary(pcapFileBinary);
                 parser = new PacketParser(pcapFile.getAbsolutePath(), packetInfo);
-                packetHex = new PacketHex(hexPane, packetInfo);
+                packetBuilderController.loadPcapBinary(Base64.getDecoder().decode(pcapFileBinary.getBytes()));
+//                packetHex = new PacketHex(hexPane, packetInfo);
             } catch (IOException ex) {
                 LOG.error("Failed to load PCAP value", ex);
             }
@@ -234,10 +248,10 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
         if (selectedFile != null) {
             packetInfo = new PacketInfo();
             parser = new PacketParser(selectedFile.getAbsolutePath(), packetInfo);
-            packetHex = new PacketHex(hexPane, packetInfo);
+//            packetHex = new PacketHex(hexPane, packetInfo);
 
-            String encodedPcapFile = trafficProfile.encodePcapFile(selectedFile.getAbsolutePath());
-            selectedProfile.getStream().getPacket().setBinary(encodedPcapFile);
+            packetBuilderController.loadPcapFile(selectedFile);
+            selectedProfile.getStream().getPacket().setBinary(packetBuilderController.getModel().getPkt().binary);
 
         } else {
             LOG.info("file = null");
@@ -340,8 +354,7 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
             // save stream selected in stream property
             selectedProfile.getStream().getPacket().setMeta(Util.serializeObjectToString(builderDataBinder));
         }
-        String encodedBinaryPacket = trafficProfile.encodeBinaryFromHexString(hexPacket);
-        selectedProfile.getStream().getPacket().setBinary(encodedBinaryPacket);
+        selectedProfile.getStream().getPacket().setBinary(packetBuilderController.getModel().getPkt().binary);
     }
 
     /**
