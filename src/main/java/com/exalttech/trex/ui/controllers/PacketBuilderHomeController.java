@@ -158,6 +158,7 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
         this.profileList = profileList;
         this.yamlFileName = yamlFileName;
         streamPropertiesController.init(profileList, selectedProfileIndex);
+        packetBuilderController.reset();
         switch (type) {
             case ADD_STREAM:
                 hideStreamBuilderTab();
@@ -181,11 +182,10 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
     private void initEditStream(TableProfileStream tableProfileStream) {
         String pcapFileBinary = tableProfileStream.getPcapBinary();
         String pktModel = tableProfileStream.getPktModel();
-        packetBuilderController.newPacket();
         try {
             if(!StringUtils.isEmpty(pktModel)) {
                 packetBuilderController.loadUserModel(pktModel);
-            } else {
+            } else if (!StringUtils.isEmpty(pcapFileBinary)) {
                 packetBuilderController.loadPcapBinary(Base64.getDecoder().decode(pcapFileBinary.getBytes()));
             }
         } catch (IOException e) {
@@ -203,7 +203,6 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
             packetInfo = new PacketInfo();
             File pcapFile = trafficProfile.decodePcapBinary(pcapFileBinary);
             parser = new PacketParser(pcapFile.getAbsolutePath(), packetInfo);
-//            packetHex = new PacketHex(hexPane, packetInfo);
         } catch (IOException ex) {
             LOG.error("Failed to load PCAP value", ex);
         }
