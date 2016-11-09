@@ -70,13 +70,6 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
     private static final Logger LOG = Logger.getLogger(PacketBuilderHomeController.class.getName());
 
     @FXML
-    AnchorPane details;
-    @FXML
-    AnchorPane hexPane;
-    
-    @FXML
-    Button pcapProperties;
-    @FXML
     Button savePacket;
     @FXML
     Button nextStreamBtn;
@@ -93,21 +86,11 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
     @FXML
     StreamPropertiesViewController streamPropertiesController;
     @FXML
-    AnchorPane packetViewer;
-    @FXML
-    PacketViewerController packetViewerController;
-    @FXML
     AnchorPane protocolSelection;
-    @FXML
-    ProtocolSelectionController protocolSelectionController;
     @FXML
     AnchorPane protocolData;
     @FXML
-    ProtocolDataController protocolDataController;
-    @FXML
     Tab packetViewerTab;
-    @FXML
-    Tab packetViewerWithTreeTab;
     @FXML
     Tab protocolSelectionTab;
     @FXML
@@ -120,17 +103,12 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
     Tab streamPropertiesTab;
     @FXML
     TabPane streamTabPane;
-
-    @FXML
-    StackPane fieldEditorTopPane;
     
     @Inject
     FieldEditorController packetBuilderController;
     
     PacketInfo packetInfo = null;
     private PacketParser parser;
-    private PacketHex packetHex;
-
     private TextWindowController controller;
     private Profile selectedProfile;
     private boolean isBuildPacket = false;
@@ -179,9 +157,6 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
             case ADD_STREAM:
                 hideStreamBuilderTab();
                 break;
-            case BUILD_STREAM:
-                initStreamBuilder(new BuilderDataBinding());
-                break;
             case EDIT_STREAM:
                 initEditStream(selectedStream);
                 break;
@@ -207,13 +182,6 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
         } catch (IOException e) {
             LOG.error("Failed to load Packet Builder", e);
         }
-        if (!Util.isNullOrEmpty(selectedProfile.getStream().getPacket().getMeta())) {
-            BuilderDataBinding dataBinding = (BuilderDataBinding) Util.deserializeStringToObject(selectedProfile.getStream().getPacket().getMeta());
-            if (dataBinding != null) {
-                initStreamBuilder(dataBinding);
-                return;
-            }
-        }
         hideStreamBuilderTab();
     }
 
@@ -226,9 +194,6 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
 
         isBuildPacket = true;
         this.builderDataBinder = builderDataBinder;
-        // initialize builder tabs
-        protocolSelectionController.bindSelections(builderDataBinder.getProtocolSelection());
-        protocolDataController.bindSelection(builderDataBinder);
     }
 
     /**
@@ -426,16 +391,6 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
         Packet packet = stream.getPacket();
         
         selectedProfile = streamPropertiesController.getUpdatedSelectedProfile();
-        String hexPacket = null;
-        if (packetHex != null && !isBuildPacket) {
-            hexPacket = packetHex.getPacketHexFromList();
-        } else if (isBuildPacket) {
-            hexPacket = PacketBuilderHelper.getPacketHex(protocolDataController.getProtocolData().getPacket().getRawData());
-            stream.setAdditionalProperties(protocolDataController.getVm());
-            stream.setFlags(protocolDataController.getFlagsValue());
-            // save stream selected in stream property
-            packet.setMeta(Util.serializeObjectToString(builderDataBinder));
-        }
         packet.setBinary(packetBuilderController.getBinaryPkt());
         packet.setModel(packetBuilderController.getModel().serialize());
         stream.setVm(packetBuilderController.getPktVmInstructions());
