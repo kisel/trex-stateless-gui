@@ -5,9 +5,6 @@
  */
 package com.exalttech.trex.ui.trafficProfile;
 
-import javafx.scene.control.Button;
-import org.testng.annotations.Test;
-
 /**
  * Traffic profile test
  *
@@ -15,20 +12,6 @@ import org.testng.annotations.Test;
  */
 public class TrafficProfileTest extends TrafficProfileTestBase {
 
-    @Test(groups = "createProfileGroup")
-    public void createProfileTest() {
-
-        // open traffic profile from menu
-        openTrafficProfile();
-
-        // click on create profile button
-        waitForNode("Create Profile");
-        Button createProfileBtn = find("Create Profile");
-        clickOn(createProfileBtn);
-
-        // create profile
-        addNewProfileStream("testProfile");
-        verifyItemExistsInList("#profileListView", "testProfile.yaml");
-    }
+    // Deleted for a time being due to new implementations of packet editor.
 
 }
