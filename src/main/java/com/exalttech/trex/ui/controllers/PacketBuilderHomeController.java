@@ -95,8 +95,7 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
     Tab protocolSelectionTab;
     @FXML
     Tab protocolDataTab;
-    @FXML
-    Tab advanceSettingsTab;
+    
     @FXML
     AdvancedSettingsController advancedSettingsController;
     @FXML
@@ -127,7 +126,6 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         trafficProfile = new TrafficProfile();
-        packetHex = new PacketHex(hexPane);
         nextStreamBtn.setGraphic(new ImageView(new Image("/icons/next_stream.png")));
         prevStreamBtn.setGraphic(new ImageView(new Image("/icons/prev_stream.png")));
         packetInfo = new PacketInfo();
@@ -141,9 +139,8 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
      * @param profileList
      * @param selectedProfileIndex
      * @param yamlFileName
-     * @param type
      */
-    public void initStreamBuilder(TableProfileStream selectedStream, List<Profile> profileList, int selectedProfileIndex, String yamlFileName, StreamBuilderType type) {
+    public void initStreamBuilder(TableProfileStream selectedStream, List<Profile> profileList, int selectedProfileIndex, String yamlFileName) {
         packetBuilderController.initAcceleratorsHandler(windowContainer.getScene());
         this.selectedProfile = profileList.get(selectedProfileIndex);
         this.profileList = profileList;
@@ -152,39 +149,14 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
 
         streamPropertiesController.init(profileList, selectedProfileIndex);
         updateNextPrevButtonState();
-        packetBuilderController.reset();
-        switch (type) {
-            case ADD_STREAM:
-                hideStreamBuilderTab();
-                break;
-            case EDIT_STREAM:
-                initEditStream(selectedStream);
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
-     * Initialize Edit stream builder in case of edit
-     *
-     * @param tableProfileStream
-     */
-    private void initEditStream(TableProfileStream tableProfileStream) {
-        String pcapFileBinary = tableProfileStream.getPcapBinary();
-        String pktModel = tableProfileStream.getPktModel();
-        try {
-            if(!StringUtils.isEmpty(pktModel)) {
-                packetBuilderController.loadUserModel(pktModel);
-            } else if (!StringUtils.isEmpty(pcapFileBinary)) {
-                packetBuilderController.loadPcapBinary(Base64.getDecoder().decode(pcapFileBinary.getBytes()));
-            }
-        } catch (IOException e) {
-            LOG.error("Failed to load Packet Builder", e);
-        }
         hideStreamBuilderTab();
+        
+        String pktModel = selectedStream.getPktModel();
+        if(!StringUtils.isEmpty(pktModel)) {
+            packetBuilderController.loadUserModel(pktModel);
+        }
     }
-
+    
     /**
      * Initialize Build stream builder in case of edit
      *
@@ -303,6 +275,7 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
      */
     @FXML
     public void nextStreamBtnClicked(ActionEvent event) {
+        saveStream();
         nextStreamBtn.setDisable(true);
         loadProfile(true);
     }
@@ -314,6 +287,7 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
      */
     @FXML
     public void prevStreamBtnClick(ActionEvent event) {
+        saveStream();
         prevStreamBtn.setDisable(true);
         loadProfile(false);
     }
@@ -346,12 +320,7 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
      */
     private void resetTabs() {
         streamTabPane.getTabs().clear();
-        streamTabPane.getTabs().add(streamPropertiesTab);
-        streamTabPane.getTabs().add(packetViewerTab);
-        streamTabPane.getTabs().add(protocolSelectionTab);
-        streamTabPane.getTabs().add(protocolDataTab);
-        streamTabPane.getTabs().add(advanceSettingsTab);
-        streamTabPane.getTabs().add(packetViewerWithTreeTab);
+        streamTabPane.getTabs().addAll(streamPropertiesTab, packetViewerTab);
     }
 
     /**
@@ -360,8 +329,6 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
     private void updateNextPrevButtonState() {
         nextStreamBtn.setDisable((currentSelectedProfileIndex >= profileList.size() - 1));
         prevStreamBtn.setDisable((currentSelectedProfileIndex == 0));
-//        nextBtnCLicked = false;
-//        prevBtnCLicked = false;
     }
 
     /**
@@ -377,7 +344,13 @@ public class PacketBuilderHomeController extends DialogView implements Initializ
         stage.setTitle(windowTitle);
 
         streamPropertiesController.init(profileList, currentSelectedProfileIndex);
-        initEditStream(selectedProfile.getStream().getPacket().getBinary());
+        Stream stream = selectedProfile.getStream();
+        Packet packet = stream.getPacket();
+        String pktModel = packet.getModel();
+        if(!StringUtils.isEmpty(pktModel)) {
+            packetBuilderController.loadUserModel(pktModel);
+        }
+        
     }
 
     /**
